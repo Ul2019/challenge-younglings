@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>buttons</title>
+</head>
+<body>
+<h1>permisson buttons</h1>
+    <div class="wrapper">
+      <section class="main-controls">
+        <canvas class="visualizer" height="60px" style="display:none"></canvas>
+        <div id="buttons" style="margin-bottom:20px;">
+          <button class="record">Record</button>
+          <button class="stop">Stop</button>
+        </div>
+      </section>
+      <section class="sound-clips"></section>
+    </div>
+    <script>
+      const record = document.querySelector('.record');
+      const stop = document.querySelector('.stop');
+      const soundClips = document.querySelector('.sound-clips');
+      const mainSection = document.querySelector('.main-controls');
+  
+      stop.disabled = true;
+      let audioCtx;
+  
+      if (navigator.mediaDevices.getUserMedia) {
+        const constraints = {
+          audio: true
+        };
+        let chunks = [];
+  
+        let onSuccess = function(stream) {
+          const mediaRecorder = new MediaRecorder(stream);
+  
+          visualize(stream);
+  
+          record.onclick = function() {
+            //ask for browser's audio record or microphone permission here
+            if (navigator.mediaDevices.getUserMedia) {
+              mediaRecorder.start();
+              console.log("recorder started");
+              record.style.background = "red";
+              stop.disabled = false;
+              record.disabled = true;
+            }
+          }
+  
+          stop.onclick = function() {
+            mediaRecorder.stop();
+            console.log(mediaRecorder.state);
+            console.log("recorder stopped");
+            record.style.background = "";
+            record.style.color = "";
+            stop.disabled = true;
+            record.disabled = false;
+          }
+  
+          mediaRecorder.onstop = function(e) {
+            const clipContainer = document.createElement('article');
+            const clipLabel = document.createElement('p');
+            const audio = document.createElement('audio');
+            clipContainer.classList.add('clip');
+            audio.setAttribute('controls', '');
+            clipContainer.appendChild(audio);
+            clipContainer.appendChild(clipLabel);
+            soundClips.appendChild(clipContainer);
+  
+            audio.controls = true;
+            const blob = new Blob(chunks, {
+              'type': 'audio/ogg; codecs=opus'
+            });
+            chunks = [];
+            const audioURL = window.URL.createObjectURL(blob);
+            audio.src = audioURL;
+            console.log("recorder stopped");
+  
+  
+            clipLabel.onclick = function() {
+              const existingName = clipLabel.textContent;
+              const newClipName = prompt('Enter a new name for your sound clip?');
+              if (newClipName === null) {
+                clipLabel.textContent = existingName;
+              } else {
+                clipLabel.textContent = newClipName;
+              }
+            }
+          }
+  
+          mediaRecorder.ondataavailable = function(e) {
+            chunks.push(e.data);
+          }
+        }
+  
+        let onError = function(err) {
+          console.log('The following error occured: ' + err);
+        }
+  
+        navigator.mediaDevices.getUserMedia(constraints).then(onSuccess, onError);
+  
+      } else {
+        console.log('getUserMedia not supported on your browser!');
+      }
+  
+      function visualize(stream) {
+        if (!audioCtx) {
+          audioCtx = new AudioContext();
+        }
+  
+        const source = audioCtx.createMediaStreamSource(stream);
+  
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 2048;
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+  
+        source.connect(analyser);
+      }
+    </script>
+    <h1>uploading button</h1>
+    <script>
+        function setup() {
+            document.getElementById('buttonid').addEventListener('click', openDialog);
+            function openDialog() {
+                document.getElementById('fileid').click();
+            }
+            document.getElementById('fileid').addEventListener('change', submitForm);
+            function submitForm() {
+                document.getElementById('formid').submit();
+            }
+        }
+    </script> 
+</head>
+<body onload="setup()">
+    <form id='formid' action="form.php" method="POST" enctype="multipart/form-data"> 
+        <input id='fileid' type='file' name='filename' hidden/>
+        <input id='buttonid' type='button' value='Upload MB' /> 
+        <input type='submit' value='Submit' /> 
+    </form> 
+</body> 
+<h1>Click the button to get your live location.</h1>
+	<button onclick="getLocation()">Get Location</button>
+	<p id="demo"></p>
+	<script>
+	var x = document.getElementById("demo");
+	function getLocation() {
+	  	if (navigator.geolocation) {
+	    	navigator.geolocation.getCurrentPosition(showPosition);
+	  	} else { 
+	    	x.innerHTML = "Geolocation is not supported by this browser.";
+	  	}
+	}
+
+	function showPosition(position) {
+		console.log(position);
+	  	x.innerHTML = "Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude;
+	}
+	</script>
+  </body>
+</html>
